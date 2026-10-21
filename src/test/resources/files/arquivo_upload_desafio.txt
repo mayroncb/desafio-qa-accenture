@@ -1,0 +1,3 @@
+Arquivo de teste (.txt) para validação de upload no formulário Practice Form - Desafio QA Automation Accenture.
+Gerado e versionado na estrutura do repositório GitHub conforme especificação da Parte 2 do desafio.
+
