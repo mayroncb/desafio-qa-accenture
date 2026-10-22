@@ -73,11 +73,39 @@ public class WebTablesPage extends BasePage {
     public void deleteRecordByEmail(String email) {
         LOGGER.info("Deletando registro com email '{}'...", email);
         setPageSizeToMax();
+        By rowByEmail = By.xpath(String.format(
+                "//tr[td[normalize-space()='%s']] | //div[@role='row'][div[normalize-space()='%s']]",
+                email, email
+        ));
         By deleteButtonLocator = By.xpath(String.format(
                 "(//tr[td[normalize-space()='%s']] | //div[@role='row'][div[normalize-space()='%s']])//*[starts-with(@id,'delete-record-')]",
                 email, email
         ));
-        safeClick(deleteButtonLocator);
+
+        try {
+            safeClick(deleteButtonLocator);
+        } catch (Exception e) {
+            LOGGER.warn("Tentando clique de deleção via JavaScript: {}", e.getMessage());
+            List<WebElement> btns = driver.findElements(deleteButtonLocator);
+            if (!btns.isEmpty()) {
+                jsClick(btns.get(0));
+            }
+        }
+
+        // Aguarda a sincronização assíncrona do React para remover a linha da tabela
+        try {
+            wait.until(ExpectedConditions.numberOfElementsToBe(rowByEmail, 0));
+        } catch (Exception timeout) {
+            LOGGER.warn("Registro ainda visível após primeiro clique. Tentando clique de reforço via JS...");
+            try {
+                List<WebElement> btns = driver.findElements(deleteButtonLocator);
+                if (!btns.isEmpty()) {
+                    jsClick(btns.get(0));
+                    wait.until(ExpectedConditions.numberOfElementsToBe(rowByEmail, 0));
+                }
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     public boolean isRecordPresent(WebTableRecord record) {
@@ -95,7 +123,8 @@ public class WebTablesPage extends BasePage {
                 "//tr[td[normalize-space()='%s']] | //div[@role='row'][div[normalize-space()='%s']]",
                 email, email
         ));
-        return !driver.findElements(rowByEmail).isEmpty();
+        List<WebElement> rows = driver.findElements(rowByEmail);
+        return !rows.isEmpty() && rows.stream().anyMatch(WebElement::isDisplayed);
     }
 
     private void fillRegistrationForm(WebTableRecord record) {
@@ -107,4 +136,3 @@ public class WebTablesPage extends BasePage {
         clearAndType(DEPARTMENT_INPUT, record.getDepartment());
     }
 }
-

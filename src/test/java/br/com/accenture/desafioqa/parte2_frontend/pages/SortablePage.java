@@ -1,9 +1,11 @@
 package br.com.accenture.desafioqa.parte2_frontend.pages;
 
+import br.com.accenture.desafioqa.config.ConfigManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,9 +26,34 @@ public class SortablePage extends BasePage {
     public static final List<String> ASCENDING_ORDER = Arrays.asList("One", "Two", "Three", "Four", "Five", "Six");
     public static final List<String> DISORDERED_INITIAL = Arrays.asList("Six", "Two", "One", "Four", "Five", "Three");
 
-    private static final By LIST_ITEMS = By.cssSelector("#sortableContainer .vertical-list-container .list-group-item, #demo-tabpane-list .list-group-item");
+    private static final By LIST_ITEMS = By.cssSelector(
+            "#demo-tabpane-list .list-group-item, #sortableContainer .vertical-list-container .list-group-item, #sortableContainer .list-group-item, .vertical-list-container .list-group-item, div[id*='tabpane-list'] .list-group-item"
+    );
+    private static final By LIST_TAB = By.id("demo-tab-list");
+
+    public void ensureSortablePageLoaded() {
+        removeAdsAndFloatingBanners();
+        if (!driver.getCurrentUrl().contains("/sortable")) {
+            LOGGER.info("Garantindo navegação para a página /sortable...");
+            driver.get(ConfigManager.getBaseUrl() + "/sortable");
+            removeAdsAndFloatingBanners();
+        }
+
+        try {
+            List<WebElement> tabs = driver.findElements(LIST_TAB);
+            if (!tabs.isEmpty() && tabs.get(0).isDisplayed()) {
+                WebElement tab = tabs.get(0);
+                String ariaSelected = tab.getAttribute("aria-selected");
+                if ("false".equalsIgnoreCase(ariaSelected)) {
+                    safeClick(tab);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
 
     public List<String> getCurrentListOrder() {
+        ensureSortablePageLoaded();
         waitForVisible(LIST_ITEMS);
         return driver.findElements(LIST_ITEMS).stream()
                 .filter(WebElement::isDisplayed)
@@ -40,7 +67,7 @@ public class SortablePage extends BasePage {
      * e, na sequência, executa a ordenação crescente completa ("One" a "Six") via Drag and Drop.
      */
     public void sortElementsInAscendingOrderUsingDragAndDrop() {
-        removeAdsAndFloatingBanners();
+        ensureSortablePageLoaded();
         List<String> initialOrder = getCurrentListOrder();
         LOGGER.info("Ordem inicial encontrada na página Sortable: {}", initialOrder);
 

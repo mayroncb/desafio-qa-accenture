@@ -16,10 +16,12 @@ buildNumber.properties
 .project
 .settings/
 
-# Sistema Operacional
+# Sistema Operacional e arquivos temporários
 .DS_Store
 Thumbs.db
+.~lock.*#
+*~
+~$*
 
 # Logs de execução
 *.log
-
